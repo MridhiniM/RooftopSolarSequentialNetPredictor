@@ -9,13 +9,53 @@ historical weather data for Bangalore and Mumbai.
 
 ## Background
 
-This is a from-scratch rebuild of a group project originally built during a
-2024 internship program under the mentorship of Mr. Isaac Theogaraj (IEEE),
-with industry guidance on weather forecasting and renewable energy from
-Reconnect Energy. The original implementation was lost; this version keeps
-the same core idea — map-based rooftop selection, historical-irradiance-
-driven prediction, cost/savings estimation for Bangalore and Mumbai — while
-upgrading the stack, the feature set, and the UI.
+Originally listed on LinkedIn/resume as **"Sequential Neural Network model to
+determine the solar power generation capacity of rooftops"** (BMSCE IEEE /
+IEEE CS, Apr–Sep 2024) — a group project built during an internship program
+under the mentorship of Mr. Isaac Theogaraj (IEEE), with industry guidance on
+weather forecasting and renewable energy from Reconnect Energy. The original
+implementation was lost, so this is a complete reimplementation rather than
+a restoration — done from memory of the original scope, with a deliberately
+broader stack and pipeline.
+
+## What's different from the 2024 original, and why
+
+- **Tech stack, broadened.** The original was built in a first-year-of-college
+  internship: Python/Jupyter with Keras/TensorFlow for the modeling side,
+  plain JavaScript/HTML/CSS for the interface. This rebuild uses PyTorch
+  instead of Keras for the model, a React + TypeScript + Tailwind + Leaflet
+  + Recharts frontend, and a FastAPI backend — while still keeping a Jupyter
+  notebook (`backend/notebooks/model_training.ipynb`) for the training
+  walkthrough, since that's a genuinely good format for showing modeling
+  work.
+- **Data source: Solcast → NASA POWER.** The original used Solcast's
+  historical irradiance API. This rebuild uses NASA POWER instead — Solcast's
+  free tier now requires student/researcher verification with a university
+  email, while NASA POWER's hourly historical data needs no signup at all
+  and covers the same core fields (GHI, DNI, DHI, cloud amount, etc.). See
+  `backend/data/README.md` for the exact data pull.
+- **Model: a PyTorch MLP — consistent with, not a departure from, the
+  original.** The original's LinkedIn title calls it a "Sequential Neural
+  Network," which almost certainly refers to Keras's `Sequential` model
+  class (a plain stack of Dense layers — an MLP), the standard first
+  architecture taught in intro deep-learning material, not a recurrent/LSTM
+  network. This rebuild's PyTorch feedforward network is the same kind of
+  architecture in a different framework. It's also the architecturally
+  correct choice independent of that history: the prediction target — PV
+  output for a given hour — is (almost entirely) a deterministic function of
+  *that same hour's* weather, not a function of a sequence of prior hours,
+  so there's no sequential structure for an LSTM to exploit beyond what the
+  cyclical hour/day-of-year features already capture. (A real LSTM would
+  earn its keep on a genuinely different feature: short-term forecasting
+  from a rolling window of recent readings — a legitimate future addition,
+  not what this app does today.)
+- **More factors than the original's "GHI, GTI, cloud opacity, etc."**: DNI,
+  DHI, cloud amount, temperature, wind speed, relative humidity,
+  precipitation, surface albedo, surface pressure, plus cyclical
+  time-of-day/time-of-year encodings and a derived cloud-opacity ratio.
+- **No real generation telemetry**, same as the original project never had
+  it either — see "Training target" below for how this rebuild handles that
+  honestly rather than papering over it.
 
 ## How it works
 
