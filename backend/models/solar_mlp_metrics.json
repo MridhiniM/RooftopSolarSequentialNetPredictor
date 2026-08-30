@@ -1,0 +1,27 @@
+{
+  "test_year": 2023,
+  "r2": 0.9999,
+  "rmse_w_per_kwp": 1.65,
+  "mae_w_per_kwp": 0.93,
+  "n_train": 70128,
+  "n_test": 17520,
+  "features": [
+    "ghi",
+    "dni",
+    "dhi",
+    "gti",
+    "cloud_amt",
+    "cloud_opacity",
+    "temp_air",
+    "wind_speed",
+    "rel_humidity",
+    "precip",
+    "albedo",
+    "pressure",
+    "hour_sin",
+    "hour_cos",
+    "doy_sin",
+    "doy_cos",
+    "latitude"
+  ]
+}
