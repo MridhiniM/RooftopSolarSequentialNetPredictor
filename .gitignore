@@ -20,5 +20,5 @@ frontend/dist/
 .DS_Store
 
 # Model artifacts (large binaries excluded, kept via release/LFS if needed)
-backend/models/*.pt
-backend/models/*.json
+#backend/models/*.pt
+#backend/models/*.json
