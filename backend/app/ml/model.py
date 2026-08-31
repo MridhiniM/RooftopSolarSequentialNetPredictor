@@ -18,7 +18,19 @@ INPUT_FEATURES = [
     "hour_sin", "hour_cos", "doy_sin", "doy_cos", "latitude",
 ]
 
-MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
+import os
+
+# Look for 'models' folder starting from the root of the running app workspace
+BASE_DIR = Path(os.getcwd())
+
+# If the app runs from inside 'backend' folder or the repo root, look for 'models' safely
+if (BASE_DIR / "models").exists():
+    MODELS_DIR = BASE_DIR / "models"
+else:
+    MODELS_DIR = BASE_DIR / "backend" / "models"
+
+print(f"[STARTUP] Absolute resolved Models Directory: {MODELS_DIR.resolve()}")
+print(f"[STARTUP] Model files exist check: {MODELS_DIR.exists()}")
 
 
 class SolarOutputMLP(nn.Module):
