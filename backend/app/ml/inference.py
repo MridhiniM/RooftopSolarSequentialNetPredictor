@@ -12,7 +12,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from app.ml.model import INPUT_FEATURES, load_artifacts, predict_specific_power
+import logging
+from app.ml.model import INPUT_FEATURES, MODELS_DIR, load_artifacts, predict_specific_power
+
+logger = logging.getLogger(__name__)
 from app.ml.transposition import add_gti_column, optimal_tilt_for_latitude
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -20,7 +23,16 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 @lru_cache(maxsize=1)
 def _get_model():
-    return load_artifacts()
+    logger.info(f"Loading model from: {MODELS_DIR}")
+    logger.info(f"MODELS_DIR exists: {MODELS_DIR.exists()}")
+    if MODELS_DIR.exists():
+        logger.info(f"Files in MODELS_DIR: {list(MODELS_DIR.glob('*'))}")
+    artifacts = load_artifacts()
+    if artifacts is None:
+        logger.warning("Model artifacts not found - will fall back to climatology")
+    else:
+        logger.info("Model artifacts loaded successfully")
+    return artifacts
 
 
 @lru_cache(maxsize=8)
