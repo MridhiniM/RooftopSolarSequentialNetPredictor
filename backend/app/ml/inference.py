@@ -39,8 +39,12 @@ def _get_model():
 @lru_cache(maxsize=8)
 def _get_typical_profile(city_key: str) -> pd.DataFrame | None:
     path = DATA_DIR / f"typical_profile_{city_key}.json"
+    print(f"[DEBUG] Looking for typical profile at: {path}")
+    print(f"[DEBUG] Path exists: {path.exists()}")
     if not path.exists():
+        print(f"[WARNING] Typical profile not found for {city_key}")
         return None
+    print(f"[DEBUG] Loading typical profile for {city_key}")
     return pd.DataFrame(json.loads(path.read_text()))
 
 
