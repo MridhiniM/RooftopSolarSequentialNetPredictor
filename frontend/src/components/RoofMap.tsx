@@ -17,7 +17,7 @@ function polygonAreaM2(points: LatLngTuple[]): number {
   if (points.length < 3) return 0
   const ring = [...points.map(([lat, lng]) => [lng, lat]), [points[0][1], points[0][0]]]
   const poly = turf.polygon([ring])
-  return turf.area(poly) // m^2
+  return turf.area(poly)
 }
 
 export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
@@ -33,8 +33,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
 
   useEffect(() => {
     onAreaChange(area, points)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area])
+  }, [area, onAreaChange])
 
   useEffect(() => {
     setViewState({
@@ -52,7 +51,6 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
   const undo = () => setPoints((prev) => prev.slice(0, -1))
   const clear = () => setPoints([])
 
-  // Create GeoJSON for the polygon
   const polygonGeoJSON = {
     type: 'Feature' as const,
     geometry: {
@@ -64,7 +62,6 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
     properties: {},
   }
 
-  // Create GeoJSON for the points
   const pointsGeoJSON = {
     type: 'FeatureCollection' as const,
     features: points.map(([lat, lng]) => ({
@@ -93,7 +90,6 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
           <NavigationControl position="top-left" />
           <GeolocateControl position="top-left" />
 
-          {/* Polygon fill */}
           {points.length >= 3 && (
             <source key="polygon-source" id="polygon-source" type="geojson" data={polygonGeoJSON}>
               <layer
@@ -115,7 +111,6 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
             </source>
           )}
 
-          {/* Points */}
           {points.length > 0 && (
             <source key="points-source" id="points-source" type="geojson" data={pointsGeoJSON}>
               <layer
