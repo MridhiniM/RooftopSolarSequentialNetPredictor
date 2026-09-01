@@ -22,3 +22,5 @@ frontend/dist/
 # Model artifacts (large binaries excluded, kept via release/LFS if needed)
 #backend/models/*.pt
 #backend/models/*.json
+.vercel
+.env*
