@@ -1,30 +1,17 @@
-import { useMemo, useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Polygon, CircleMarker, useMapEvents, useMap } from 'react-leaflet'
+import { useMemo, useState, useEffect, useRef } from 'react'
+import Map, { GeolocateControl, NavigationControl } from 'react-map-gl'
 import * as turf from '@turf/turf'
-import type { LatLngExpression, LatLngTuple } from 'leaflet'
+import type { MapRef } from 'react-map-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+
+type LatLngTuple = [number, number]
 
 interface RoofMapProps {
   center: LatLngTuple
   onAreaChange: (areaM2: number, points: LatLngTuple[]) => void
 }
 
-function ClickCapture({ onClick }: { onClick: (latlng: LatLngTuple) => void }) {
-  useMapEvents({
-    click(e) {
-      onClick([e.latlng.lat, e.latlng.lng])
-    },
-  })
-  return null
-}
-
-function Recenter({ center }: { center: LatLngTuple }) {
-  const map = useMap()
-  useEffect(() => {
-    map.setView(center, map.getZoom())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center[0], center[1]])
-  return null
-}
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
 function polygonAreaM2(points: LatLngTuple[]): number {
   if (points.length < 3) return 0
@@ -34,7 +21,13 @@ function polygonAreaM2(points: LatLngTuple[]): number {
 }
 
 export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
+  const mapRef = useRef<MapRef>(null)
   const [points, setPoints] = useState<LatLngTuple[]>([])
+  const [viewState, setViewState] = useState({
+    longitude: center[1],
+    latitude: center[0],
+    zoom: 19,
+  })
 
   const area = useMemo(() => polygonAreaM2(points), [points])
 
@@ -43,43 +36,102 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area])
 
-  const addPoint = (pt: LatLngTuple) => setPoints((prev) => [...prev, pt])
+  useEffect(() => {
+    setViewState({
+      longitude: center[1],
+      latitude: center[0],
+      zoom: 19,
+    })
+  }, [center[0], center[1]])
+
+  const handleMapClick = (event: any) => {
+    const { lng, lat } = event.lngLat
+    setPoints((prev) => [...prev, [lat, lng]])
+  }
+
   const undo = () => setPoints((prev) => prev.slice(0, -1))
   const clear = () => setPoints([])
 
-  const polygonPositions = points as LatLngExpression[]
+  // Create GeoJSON for the polygon
+  const polygonGeoJSON = {
+    type: 'Feature' as const,
+    geometry: {
+      type: 'Polygon' as const,
+      coordinates: [
+        [...points.map(([lat, lng]) => [lng, lat]), [points[0][1], points[0][0]]],
+      ],
+    },
+    properties: {},
+  }
+
+  // Create GeoJSON for the points
+  const pointsGeoJSON = {
+    type: 'FeatureCollection' as const,
+    features: points.map(([lat, lng]) => ({
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [lng, lat],
+      },
+      properties: {},
+    })),
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="relative overflow-hidden rounded-2xl border border-slate-700/60 shadow-lg shadow-black/30">
-        <MapContainer
-          center={center}
-          zoom={19}
-          scrollWheelZoom
+        <Map
+          ref={mapRef}
+          {...viewState}
+          onMove={(evt) => setViewState(evt.viewState)}
           style={{ height: '420px', width: '100%' }}
+          mapStyle="mapbox://styles/mapbox/streets-v12"
+          mapboxAccessToken={MAPBOX_TOKEN}
+          onClick={handleMapClick}
+          scrollZoom
         >
-          <TileLayer
-            attribution="Tiles &copy; Esri"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxZoom={20}
-          />
-          <ClickCapture onClick={addPoint} />
-          <Recenter center={center} />
-          {points.map((p, i) => (
-            <CircleMarker
-              key={i}
-              center={p}
-              radius={5}
-              pathOptions={{ color: '#facc15', fillColor: '#facc15', fillOpacity: 1 }}
-            />
-          ))}
+          <NavigationControl position="top-left" />
+          <GeolocateControl position="top-left" />
+
+          {/* Polygon fill */}
           {points.length >= 3 && (
-            <Polygon
-              positions={polygonPositions}
-              pathOptions={{ color: '#22d3ee', weight: 2, fillColor: '#22d3ee', fillOpacity: 0.25 }}
-            />
+            <source key="polygon-source" id="polygon-source" type="geojson" data={polygonGeoJSON}>
+              <layer
+                id="polygon-fill"
+                type="fill"
+                paint={{
+                  'fill-color': '#22d3ee',
+                  'fill-opacity': 0.25,
+                }}
+              />
+              <layer
+                id="polygon-stroke"
+                type="line"
+                paint={{
+                  'line-color': '#22d3ee',
+                  'line-width': 2,
+                }}
+              />
+            </source>
           )}
-        </MapContainer>
+
+          {/* Points */}
+          {points.length > 0 && (
+            <source key="points-source" id="points-source" type="geojson" data={pointsGeoJSON}>
+              <layer
+                id="points-layer"
+                type="circle"
+                paint={{
+                  'circle-radius': 6,
+                  'circle-color': '#facc15',
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#fff',
+                }}
+              />
+            </source>
+          )}
+        </Map>
+
         <div className="pointer-events-none absolute left-3 top-3 rounded-lg bg-slate-950/80 px-3 py-1.5 text-xs text-slate-200 backdrop-blur">
           Click to trace your rooftop outline &middot; {points.length} point{points.length === 1 ? '' : 's'}
         </div>
