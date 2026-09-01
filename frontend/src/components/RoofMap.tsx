@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import Map, { GeolocateControl, NavigationControl } from 'react-map-gl'
+import Map, { GeolocateControl, NavigationControl, Source, Layer } from 'react-map-gl/mapbox'
 import * as turf from '@turf/turf'
-import type { MapRef } from 'react-map-gl'
+import type { MapRef } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 type LatLngTuple = [number, number]
@@ -80,7 +80,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
         <Map
           ref={mapRef}
           {...viewState}
-          onMove={(evt) => setViewState(evt.viewState)}
+          onMove={(evt:any) => setViewState(evt.viewState)}
           style={{ height: '420px', width: '100%' }}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           mapboxAccessToken={MAPBOX_TOKEN}
@@ -91,8 +91,8 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
           <GeolocateControl position="top-left" />
 
           {points.length >= 3 && (
-            <source key="polygon-source" id="polygon-source" type="geojson" data={polygonGeoJSON}>
-              <layer
+            <Source id="polygon-source" type="geojson" data={polygonGeoJSON}>
+              <Layer
                 id="polygon-fill"
                 type="fill"
                 paint={{
@@ -100,7 +100,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
                   'fill-opacity': 0.25,
                 }}
               />
-              <layer
+              <Layer
                 id="polygon-stroke"
                 type="line"
                 paint={{
@@ -108,12 +108,12 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
                   'line-width': 2,
                 }}
               />
-            </source>
+            </Source>
           )}
 
           {points.length > 0 && (
-            <source key="points-source" id="points-source" type="geojson" data={pointsGeoJSON}>
-              <layer
+            <Source id="points-source" type="geojson" data={pointsGeoJSON}>
+              <Layer
                 id="points-layer"
                 type="circle"
                 paint={{
@@ -123,7 +123,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
                   'circle-stroke-color': '#fff',
                 }}
               />
-            </source>
+            </Source>
           )}
         </Map>
 

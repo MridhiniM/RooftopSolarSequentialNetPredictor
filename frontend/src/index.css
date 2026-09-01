@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 
 :root {
   color-scheme: dark;
@@ -13,8 +12,4 @@ html, body, #root {
 
 body {
   font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
-}
-
-.leaflet-container {
-  font-family: inherit;
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import type { LatLngTuple } from 'leaflet'
 import RoofMap from './components/RoofMap'
 import ResultsDashboard from './components/ResultsDashboard'
 import { fetchCities, predict, type City, type PredictResponse } from './api'
+
+type LatLngTuple = [number, number]
 
 const FALLBACK_CITIES: City[] = [
   { key: 'bangalore', name: 'Bangalore', latitude: 12.9716, longitude: 77.5946 },
