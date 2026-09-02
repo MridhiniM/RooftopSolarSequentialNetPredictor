@@ -1,15 +1,42 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  --bg-primary: #fffbf0;
+  --bg-secondary: #fef3c7;
+  --accent-primary: #fbbf24;
+  --accent-secondary: #f59e0b;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #fbbf24;
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
-  background-color: #0b1120;
+  background-color: var(--bg-primary);
 }
 
 body {
-  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-primary);
+}
+
+* {
+  border-radius: 0 !important;
+}
+
+input, select, button {
+  font-family: 'Poppins', system-ui, sans-serif;
+  border-radius: 0 !important;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
 }

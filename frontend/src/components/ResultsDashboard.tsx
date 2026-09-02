@@ -11,10 +11,10 @@ function formatINR(value: number): string {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-slate-700/60 bg-slate-900/60 p-4">
-      <div className="truncate text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1 break-words text-xl font-semibold text-slate-50">{value}</div>
-      {sub && <div className="mt-1 text-xs text-slate-400">{sub}</div>}
+    <div style={{ background: 'white', border: '2px solid #fbbf24', padding: '14px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#6b7280', fontWeight: 500 }}>{label}</div>
+      <div style={{ marginTop: '6px', wordBreak: 'break-word', fontSize: '18px', fontWeight: 700, color: '#1f2937' }}>{value}</div>
+      {sub && <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>{sub}</div>}
     </div>
   )
 }
@@ -23,15 +23,22 @@ export default function ResultsDashboard({ result }: { result: PredictResponse }
   const isSeedData = result.model_source === 'physics_fallback_seed_climatology'
 
   return (
-    <div className="flex flex-col gap-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Header with pulsing sun */}
+      <div style={{ textAlign: 'center', paddingBottom: '16px', borderBottom: '2px solid #fbbf24' }}>
+        <div style={{ fontSize: '48px', marginBottom: '12px', animation: 'pulse 2s infinite' }} className="pulse-animation">☀️</div>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: '#1f2937' }}>Prediction Results</div>
+        <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6b7280' }}>Your solar energy potential</p>
+      </div>
+
       {isSeedData && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">
-          Using placeholder seed climatology &mdash; swap in the trained model's real
-          historical-data output for final numbers.
+        <div style={{ border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)', padding: '12px', fontSize: '13px', color: '#92400e', fontWeight: 500 }}>
+          Using placeholder seed climatology — swap in the trained model's real historical-data output for final numbers.
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Main Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <StatCard label="System size" value={`${result.capacity_kwp.toFixed(2)} kWp`} />
         <StatCard
           label="Annual generation"
@@ -44,32 +51,35 @@ export default function ResultsDashboard({ result }: { result: PredictResponse }
         />
       </div>
 
-      <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4">
-        <div className="mb-3 text-sm font-medium text-slate-300">
-          Monthly generation (kWh) &mdash; seasonal fluctuation
+      {/* Chart */}
+      <div style={{ background: 'white', border: '2px solid #fbbf24', padding: '16px' }}>
+        <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 600, color: '#1f2937' }}>
+          📊 Monthly generation (kWh)
         </div>
-        <ResponsiveContainer width="100%" height={260}>
+        <ResponsiveContainer width="100%" height={220}>
           <BarChart data={result.monthly_generation}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} />
-            <YAxis stroke="#94a3b8" fontSize={12} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
+            <YAxis stroke="#9ca3af" fontSize={12} />
             <Tooltip
-              contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8 }}
-              labelStyle={{ color: '#e2e8f0' }}
+              contentStyle={{ background: '#fffbf0', border: '2px solid #fbbf24', fontFamily: 'Poppins, system-ui, sans-serif' }}
+              labelStyle={{ color: '#1f2937' }}
             />
-            <Bar dataKey="generation_kwh" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="generation_kwh" fill="#f59e0b" radius={0} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
-        <StatCard label="Annual bill savings" value={formatINR(result.annual_savings_inr)} />
+      {/* Savings Cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <StatCard label="💰 Annual bill savings" value={formatINR(result.annual_savings_inr)} />
         <StatCard label="5-year savings" value={formatINR(result.savings_5yr_inr)} />
         <StatCard label="10-year savings" value={formatINR(result.savings_10yr_inr)} />
       </div>
-      <p className="text-xs text-slate-500">
-        Panel degradation is not modeled, matching the original project's scope. Cost and
-        tariff figures are illustrative averages, not a bankable quote.
+
+      {/* Footer note */}
+      <p style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '8px', lineHeight: '1.5' }}>
+        Panel degradation is not modeled, matching the original project's scope. Cost and tariff figures are illustrative averages, not a bankable quote.
       </p>
     </div>
   )
