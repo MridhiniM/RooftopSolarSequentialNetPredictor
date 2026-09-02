@@ -3,7 +3,8 @@ import RoofMap from './components/RoofMap'
 import ResultsDashboard from './components/ResultsDashboard'
 import { fetchCities, predict, type City, type PredictResponse } from './api'
 
-type LatLngTuple = [number, number]
+// Localized clean tuple type definition
+type CoordinateTuple = [number, number]
 
 const FALLBACK_CITIES: City[] = [
   { key: 'bangalore', name: 'Bangalore', latitude: 12.9716, longitude: 77.5946 },
@@ -28,7 +29,9 @@ export default function App() {
   }, [])
 
   const city = cities.find((c) => c.key === cityKey) ?? cities[0]
-  const center: LatLngTuple = [city.latitude, city.longitude]
+  
+  // FIX: Mapbox uses [longitude, latitude] ordering explicitly
+  const mapboxCoords: CoordinateTuple = [city.longitude, city.latitude]
 
   const handlePredict = async () => {
     if (areaM2 < 1) {
@@ -111,7 +114,8 @@ export default function App() {
             </label>
           </div>
 
-          <RoofMap center={center} onAreaChange={(a) => setAreaM2(a)} />
+          {/* FIX: Changed center={center} to coordinates={mapboxCoords} */}
+          <RoofMap coordinates={mapboxCoords} onAreaChange={(a) => setAreaM2(a)} />
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
