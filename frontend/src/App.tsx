@@ -10,6 +10,8 @@ const FALLBACK_CITIES: City[] = [
   { key: 'mumbai', name: 'Mumbai', latitude: 19.076, longitude: 72.8777 },
 ]
 
+const DEFAULT_CENTER: LatLngTuple = [12.9716, 77.5946]
+
 export default function App() {
   const [cities, setCities] = useState<City[]>(FALLBACK_CITIES)
   const [cityKey, setCityKey] = useState('bangalore')
@@ -27,7 +29,7 @@ export default function App() {
       .catch(() => setApiOnline(false))
   }, [])
 
-  const city = cities.find((c) => c.key === cityKey) ?? cities[0]
+  const city = cities.find((c) => c.key === cityKey) || cities[0] || { latitude: DEFAULT_CENTER[0], longitude: DEFAULT_CENTER[1] }
   const center: LatLngTuple = [city.latitude, city.longitude]
 
   const handlePredict = async () => {
@@ -54,9 +56,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fffbf0', color: '#1f2937', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: '#fffbf0', color: '#1f2937', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, borderBottom: '2px solid #fbbf24', background: '#fffbf0', backdropFilter: 'blur(4px)', zIndex: 40 }}>
+      <header style={{ borderBottom: '2px solid #fbbf24', background: '#fffbf0', zIndex: 40 }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>
@@ -67,7 +69,7 @@ export default function App() {
             </p>
           </div>
           {!apiOnline && (
-            <span style={{ background: '#fee2e2', padding: '8px 12px', borderRadius: 0, fontSize: '12px', color: '#dc2626' }}>
+            <span style={{ background: '#fee2e2', padding: '8px 12px', fontSize: '12px', color: '#dc2626' }}>
               Backend unreachable
             </span>
           )}
@@ -75,7 +77,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main style={{ marginTop: '80px', display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', padding: '16px', maxWidth: '1400px', margin: '80px auto 0', width: '100%' }}>
+      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px', padding: '16px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
