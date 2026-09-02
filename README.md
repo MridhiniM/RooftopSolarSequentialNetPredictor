@@ -1,171 +1,193 @@
-# Rooftop Solar Power Predictor
+# ☀️ Rooftop Solar Predictor
 
-Trace your rooftop on a satellite map, and get an estimate of how much solar
-power it could generate: annual kWh, monthly seasonal fluctuation, install
-cost, and 5/10-year electricity bill savings — trained on 5 years of real
-historical weather data for Bangalore and Mumbai.
+A web application that helps users estimate their rooftop's solar energy generation potential, installation costs, and payback period. Trace your roof on an interactive map and get instant solar energy predictions tailored to your location.
 
-![Screenshot](docs/screenshot.png)
+**Live Demo:** https://rooftop-solar-sequential-net-predic.vercel.app/
 
-## Background
+## Features
 
-Originally listed on LinkedIn/resume as **"Sequential Neural Network model to
-determine the solar power generation capacity of rooftops"** (BMSCE IEEE /
-IEEE CS, Apr–Sep 2024) — a group project built during an internship program
-under the mentorship of Mr. Isaac Theogaraj (IEEE), with industry guidance on
-weather forecasting and renewable energy from Reconnect Energy. The original
-implementation was lost, so this is a complete reimplementation rather than
-a restoration — done from memory of the original scope, with a deliberately
-broader stack and pipeline.
+- 🗺️ **Interactive Map Tracing** — Use Mapbox GL to trace your rooftop outline and calculate area
+- ⚡ **Solar Generation Estimates** — Get annual energy generation predictions based on location and roof parameters
+- 💰 **Financial Projections** — View installation costs, annual savings, and payback period
+- 📊 **Monthly Generation Chart** — Visualize seasonal energy generation patterns
+- 🌍 **Multi-City Support** — Currently supports Bangalore and Mumbai (easily extensible)
+- 🎨 **Solar-Themed UI** — Warm, inviting interface with yellow accents and smooth animations
+- 📱 **Responsive Design** — Works on desktop and mobile devices
 
-## What's different from the 2024 original, and why
+## Tech Stack
 
-- **Tech stack, broadened.** The original was built in a first-year-of-college
-  internship: Python/Jupyter with Keras/TensorFlow for the modeling side,
-  plain JavaScript/HTML/CSS for the interface. This rebuild uses PyTorch
-  instead of Keras for the model, a React + TypeScript + Tailwind + Leaflet
-  + Recharts frontend, and a FastAPI backend — while still keeping a Jupyter
-  notebook (`backend/notebooks/model_training.ipynb`) for the training
-  walkthrough, since that's a genuinely good format for showing modeling
-  work.
-- **Data source: Solcast → NASA POWER.** The original used Solcast's
-  historical irradiance API. This rebuild uses NASA POWER instead — Solcast's
-  free tier now requires student/researcher verification with a university
-  email, while NASA POWER's hourly historical data needs no signup at all
-  and covers the same core fields (GHI, DNI, DHI, cloud amount, etc.). See
-  `backend/data/README.md` for the exact data pull.
-- **Model: a PyTorch MLP — consistent with, not a departure from, the
-  original.** The original's LinkedIn title calls it a "Sequential Neural
-  Network," which almost certainly refers to Keras's `Sequential` model
-  class (a plain stack of Dense layers — an MLP), the standard first
-  architecture taught in intro deep-learning material, not a recurrent/LSTM
-  network. This rebuild's PyTorch feedforward network is the same kind of
-  architecture in a different framework. It's also the architecturally
-  correct choice independent of that history: the prediction target — PV
-  output for a given hour — is (almost entirely) a deterministic function of
-  *that same hour's* weather, not a function of a sequence of prior hours,
-  so there's no sequential structure for an LSTM to exploit beyond what the
-  cyclical hour/day-of-year features already capture. (A real LSTM would
-  earn its keep on a genuinely different feature: short-term forecasting
-  from a rolling window of recent readings — a legitimate future addition,
-  not what this app does today.)
-- **More factors than the original's "GHI, GTI, cloud opacity, etc."**: DNI,
-  DHI, cloud amount, temperature, wind speed, relative humidity,
-  precipitation, surface albedo, surface pressure, plus cyclical
-  time-of-day/time-of-year encodings and a derived cloud-opacity ratio.
-- **No real generation telemetry**, same as the original project never had
-  it either — see "Training target" below for how this rebuild handles that
-  honestly rather than papering over it.
+**Frontend:**
+- React 19 with TypeScript
+- Mapbox GL JS & react-map-gl (v8)
+- Recharts for data visualization
+- Tailwind CSS & Poppins font
+- Vite (build tool)
 
-## How it works
+**Backend:**
+- Python FastAPI (separate repo)
+- Physics-based solar prediction model with climatology data
 
-1. **Frontend** (React + TypeScript + Tailwind + Leaflet + Recharts): trace
-   your rooftop outline on satellite imagery; the polygon area is computed
-   client-side with Turf.js.
-2. **Backend** (FastAPI): takes the roof area, city, and optional panel
-   tilt/azimuth, and returns generation, cost, and savings estimates.
-3. **Model**: a small PyTorch feedforward network predicts specific PV power
-   output (W per kWp) from weather features — GHI, DNI, DHI, a derived GTI
-   (Global Tilted Irradiance), cloud opacity, temperature, wind, humidity,
-   precipitation, albedo, pressure, and cyclical time-of-year/day encodings.
-   At request time, the trained model runs live inference over each city's
-   "typical weather profile" (a month x hour average built from 5 years of
-   historical data), so predictions come from an actual forward pass, not a
-   static lookup table — and they respond to the tilt/azimuth the user sets,
-   since GTI is re-transposed per request via `pvlib`.
-4. **Financials**: installed capacity (kWp) comes from the usable roof area
-   and panel efficiency; cost and savings use current illustrative Indian
-   residential rates (see `backend/app/config.py`).
+**Deployment:**
+- Vercel (frontend)
+- Backend deployed separately
 
-## Data & methodology — read this before treating the numbers as authoritative
+## Getting Started
 
-- **Weather data**: 5 years (2019–2023) of hourly historical weather from
-  [NASA POWER](https://power.larc.nasa.gov/) for Bangalore and Mumbai — GHI,
-  clear-sky GHI, DNI, DHI, cloud amount, temperature, wind, humidity,
-  precipitation, albedo, and surface pressure. (Solcast was the original
-  project's data source; NASA POWER was used here since it needs no signup.
-  Swapping in a Solcast key is a small, isolated change — see
-  `backend/data/README.md`.)
-- **GTI**: not a raw NASA POWER field. It's derived from GHI/DNI/DHI via a
-  Perez/Hay-Davies sky-diffuse transposition model (`pvlib`), given the
-  panel's tilt and azimuth and the sun's position at each timestamp — this
-  is standard PV-engineering practice, not a shortcut.
-- **Training target**: there is no real installed-system telemetry
-  available for this project (a known, honest limitation — see the "Is this
-  research-paper-worthy?" discussion this project's build log had). Instead
-  of fabricating numbers, the neural net is trained to reproduce NREL's
-  PVWatts DC output model (via `pvlib.pvsystem.pvwatts_dc`, with a
-  NOCT-based cell-temperature model and PVWatts' standard system-loss
-  breakdown) — a trusted, widely-used physical PV simulation. In other
-  words, **the model is a learned surrogate for a validated physical
-  simulation**, not a fit to invented "ground truth." On a held-out final
-  year (2023, unseen during training), it reproduces that simulation with
-  R² = 0.9999 (RMSE ≈ 1.6 W/kWp) — which mostly demonstrates the pipeline
-  is correct, since the target is a near-deterministic function of a subset
-  of its own inputs. The natural next step, if this project continues, is
-  replacing the synthetic target with real measured generation from actual
-  installed systems.
-- **Sanity check**: the simulated annual specific yield lands at
-  1,340–1,430 kWh/kWp/year for both cities across all 5 years — squarely in
-  the range independently reported for Indian rooftop solar installations.
-- **Interesting, non-obvious finding**: averaged over a full year, GTI at a
-  fixed south-facing "optimal" (latitude-angle) tilt comes out *slightly
-  lower* than GHI for both cities. This runs against the usual mid-latitude
-  intuition that tilting toward the sun always helps. At these near-tropical
-  latitudes (13–19°N), the sun crosses to northern declinations for part of
-  the summer, and the monsoon season's very high diffuse fraction reduces
-  the sky-view gain from tilting — so a fixed south tilt doesn't pay off
-  the way it would further from the equator. It's worth being upfront about
-  this in an interview: it's a genuine result, not a bug.
-- **Not modeled**: panel degradation over time (matching the original
-  project's scope), real-time weather/live forecasting, shading from
-  nearby structures, and non-optimal roof orientations beyond a manual
-  tilt/azimuth override.
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- A Mapbox API token (free at https://mapbox.com)
 
-## Running locally
+### Local Development
 
-```bash
-# Backend
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m scripts.train_model      # trains the model, needs data/*.csv present -- see data/README.md
-uvicorn app.main:app --reload --port 8123
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd rooftop-solar-predictor/frontend
+   ```
 
-# Frontend (separate terminal)
-cd frontend
-npm install
-npm run dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-The frontend expects the backend at `http://localhost:8123` (see
-`frontend/.env`).
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+   Then edit `.env.local` and add your Mapbox token:
+   ```
+   VITE_MAPBOX_TOKEN=your_mapbox_token_here
+   VITE_API_URL=http://localhost:8000
+   ```
 
-## Project structure
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+   The app will open at `http://localhost:5173`
+
+5. **Build for production**
+   ```bash
+   npm run build
+   npm run preview
+   ```
+
+## Usage
+
+1. **Select a city** from the dropdown (Bangalore or Mumbai)
+2. **Trace your rooftop** by clicking points on the map to outline your roof area
+3. **Adjust parameters** (optional):
+   - Panel tilt angle (leave blank for optimal auto-calculated value)
+   - Azimuth angle (180° = south-facing, optimal for northern hemisphere)
+4. **Click "PREDICT ENERGY OUTPUT"** to see:
+   - System size in kWp
+   - Annual energy generation in kWh
+   - Installation cost in INR
+   - Payback period in years
+   - Monthly generation chart
+   - Projected 5-year and 10-year savings
+
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
 
 ```
-backend/
-  app/
-    ml/              # data prep, feature engineering, pvlib transposition,
-                      # PVWatts simulation, PyTorch model, live inference
-    routers/predict.py
-    config.py         # cities, panel specs, cost/tariff assumptions
-  scripts/
-    fetch_nasa_power.py
-    train_model.py
-  data/                # historical CSVs + generated climatology/model inputs
-  models/              # trained weights, scaler, metrics
+VITE_MAPBOX_TOKEN=your_mapbox_token
+VITE_API_URL=http://localhost:8000  # Backend API URL
+```
+
+See `.env.example` for all available variables.
+
+## Project Structure
+
+```
 frontend/
-  src/
-    components/RoofMap.tsx          # Leaflet polygon picker
-    components/ResultsDashboard.tsx # charts + summary cards
-    App.tsx
+├── src/
+│   ├── components/
+│   │   ├── RoofMap.tsx         # Mapbox map for roof tracing
+│   │   └── ResultsDashboard.tsx # Results visualization
+│   ├── App.tsx                 # Main application component
+│   ├── api.ts                  # API client functions
+│   ├── index.css               # Global styles & animations
+│   └── main.tsx                # Entry point
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── README.md
 ```
 
-## What's next (matches the original project's stated roadmap)
+## How It Works
 
-- More cities — the model already takes latitude as an input specifically
-  so a new city is "fetch weather data, retrain," not an architecture change.
-- A more powerful model / more factors, if real generation telemetry
-  becomes available to validate against.
-- Deployment: frontend on Vercel, backend on Render/Railway.
+1. **Area Calculation** — Uses Turf.js to calculate polygon area from traced roof coordinates
+2. **Solar Prediction** — Sends roof area, city, tilt, and azimuth to backend API
+3. **Backend Processing** — Physics-based model calculates generation using:
+   - Local solar irradiance (climatology data)
+   - Panel efficiency (standard 20%)
+   - Temperature derating
+   - Angle of incidence losses
+4. **Financial Estimates** — Calculates costs based on ₹60/Wp system cost (configurable)
+
+## Styling & Design
+
+The app features a solar-themed design with:
+- Warm cream background (#fffbf0)
+- Golden yellow accents (#fbbf24)
+- Sharp, geometric corners (no border-radius)
+- Poppins font family
+- Pulsing sun animation on results
+- Responsive grid layout
+
+## Deployment
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Connect your repo to Vercel at https://vercel.com
+3. Set environment variables in Vercel dashboard:
+   - `VITE_MAPBOX_TOKEN` — Your Mapbox public token
+   - `VITE_API_URL` — Backend API URL (e.g., https://api.example.com)
+4. Deploy! Vercel will automatically build and deploy on push
+
+## Performance Notes
+
+- Mapbox bundle is ~2MB (gzipped ~500KB)
+- Total bundle size: ~200KB gzipped (without Mapbox)
+- Map loads at zoom 19 for precise roof tracing
+- Monthly generation data is paginated in results
+
+## Known Limitations
+
+- Currently limited to Bangalore and Mumbai (extend by adding cities to backend)
+- Uses placeholder climatology data (replace with trained ML model for production)
+- Panel degradation not modeled
+- Cost figures are illustrative averages, not bankable quotes
+- Doesn't account for shading or roof obstacles
+
+## Contributing
+
+To add new cities:
+
+1. **Backend:** Add city to the cities endpoint with latitude/longitude
+2. **Frontend:** City will automatically appear in the dropdown
+
+## Future Enhancements
+
+- [ ] Add more Indian cities
+- [ ] 3D roof visualization
+- [ ] PDF report generation
+- [ ] Integration with solar installer directories
+- [ ] Comparison with grid electricity costs
+- [ ] Export results as PDF
+
+## License
+
+[Add your license here]
+
+## Contact
+
+For questions or support, reach out at [your-email]
+
+---
+
+**Built with ❤️ for solar energy adoption in India**
