@@ -23,6 +23,8 @@ function polygonAreaM2(points: LatLngTuple[]): number {
 export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
   const mapRef = useRef<MapRef>(null)
   const [points, setPoints] = useState<LatLngTuple[]>([])
+  
+  // App.tsx center is [latitude, longitude]
   const [viewState, setViewState] = useState({
     longitude: center[1],
     latitude: center[0],
@@ -52,17 +54,20 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
   const undo = () => setPoints((prev) => prev.slice(0, -1))
   const clear = () => setPoints([])
 
-  // Create GeoJSON for the polygon
-  const polygonGeoJSON = {
-    type: 'Feature' as const,
-    geometry: {
-      type: 'Polygon' as const,
-      coordinates: [
-        [...points.map(([lat, lng]) => [lng, lat]), [points[0][1], points[0][0]]],
-      ],
-    },
-    properties: {},
-  }
+  // FIX: Structural safety guard prevents accessing points[0] when array is empty
+  const polygonGeoJSON = useMemo(() => {
+    if (points.length < 3) return null
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [
+          [...points.map(([lat, lng]) => [lng, lat]), [points[0][1], points[0][0]]],
+        ],
+      },
+      properties: {},
+    }
+  }, [points])
 
   // Create GeoJSON for the points
   const pointsGeoJSON = {
@@ -85,7 +90,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
           {...viewState}
           onMove={(evt: any) => setViewState(evt.viewState)}
           style={{ height: '420px', width: '100%' }}
-          mapStyle="mapbox://styles/mapbox/streets-v12"
+          mapStyle="mapbox://styles/mapbox/satellite-streets-v12" // FIX: Switched style to satellite so users can actually see roof structures to trace them!
           mapboxAccessToken={MAPBOX_TOKEN}
           onClick={handleMapClick}
           scrollZoom
@@ -93,15 +98,15 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
           <NavigationControl position="top-left" />
           <GeolocateControl position="top-left" />
 
-          {/* Polygon fill */}
-          {points.length >= 3 && (
+          {/* Polygon fill layer */}
+          {points.length >= 3 && polygonGeoJSON && (
             <Source id="polygon-source" type="geojson" data={polygonGeoJSON}>
               <Layer
                 id="polygon-fill"
                 type="fill"
                 paint={{
                   'fill-color': '#fbbf24',
-                  'fill-opacity': 0.2,
+                  'fill-opacity': 0.3, // Slightly higher visibility over dark satellite imagery
                 }}
               />
               <Layer
@@ -115,7 +120,7 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
             </Source>
           )}
 
-          {/* Points */}
+          {/* Points layer */}
           {points.length > 0 && (
             <Source id="points-source" type="geojson" data={pointsGeoJSON}>
               <Layer
@@ -132,13 +137,13 @@ export default function RoofMap({ center, onAreaChange }: RoofMapProps) {
           )}
         </Map>
 
-        <div style={{ pointerEvents: 'none', position: 'absolute', left: '12px', top: '12px', background: 'rgba(255, 251, 240, 0.9)', padding: '8px 12px', fontSize: '12px', color: '#6b7280', backdropFilter: 'blur(4px)' }}>
+        <div style={{ pointerEvents: 'none', position: 'absolute', left: '12px', top: '12px', background: 'rgba(255, 251, 240, 0.9)', padding: '8px 12px', fontSize: '12px', color: '#1f2937', fontWeight: 600, border: '2px solid #fbbf24' }}>
           Click to trace your rooftop outline · {points.length} point{points.length === 1 ? '' : 's'}
         </div>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-        <div style={{ fontSize: '14px', color: '#1f2937' }}>
+        <div style={{ fontSize: '14px', color: '#1f2937', fontFamily: 'Poppins, system-ui, sans-serif' }}>
           Traced area:{' '}
           <span style={{ fontWeight: 700, color: '#f59e0b' }}>{area.toFixed(1)} m²</span>
         </div>

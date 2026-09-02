@@ -115,7 +115,11 @@ export default function App() {
             </label>
           </div>
 
-          <RoofMap center={center} onAreaChange={(a) => setAreaM2(a)} />
+<RoofMap 
+  center={center} 
+  onAreaChange={(areaM2) => setAreaM2(areaM2)} 
+/>
+
 
           {error && <p style={{ fontSize: '14px', color: '#dc2626', margin: 0 }}>{error}</p>}
 
